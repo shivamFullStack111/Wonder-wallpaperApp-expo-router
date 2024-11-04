@@ -1,5 +1,6 @@
 export const primary = "#fa3278";
-export const background = "#1b1b21";
+// export const background = "#1b1b21";
+export const background = "#FFF";
 export const colors = {
   gray: {
     g400: "#D1D5DB",

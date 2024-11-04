@@ -2,7 +2,7 @@ import { StyleSheet, Text, View, Image } from "react-native";
 import React, { useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BackgroundProvider from "../components/BackgroundProvider";
-import { background } from "../utils";
+import { background, primary } from "../utils";
 import { ActivityIndicator } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import { useRouter } from "expo-router";
@@ -11,8 +11,8 @@ const Index = () => {
   const router = useRouter();
   useEffect(() => {
     setTimeout(() => {
-      router.push("/welcomeScreen");
-    }, 0);
+      router.push("welcomeScreen");
+    }, 3000);
   }, []);
   return (
     <BackgroundProvider>
@@ -22,7 +22,7 @@ const Index = () => {
       </View>
       <ActivityIndicator
         size={40}
-        color="white"
+        color={primary}
         style={styles.ActivityIndicator}
       />
     </BackgroundProvider>
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
   comText: {
     fontSize: 26,
     fontWeight: "600",
-    color: "white",
+    color: "black",
   },
   ActivityIndicator: {
     bottom: 60,
