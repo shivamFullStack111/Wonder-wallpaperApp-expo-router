@@ -11,8 +11,8 @@ const Index = () => {
   const router = useRouter();
   useEffect(() => {
     setTimeout(() => {
-      router.push("welcomeScreen");
-    }, 3000);
+      router.push("home");
+    }, 0);
   }, []);
   return (
     <BackgroundProvider>
