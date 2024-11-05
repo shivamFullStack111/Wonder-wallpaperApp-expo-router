@@ -4,16 +4,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import BackgroundProvider from "../components/BackgroundProvider";
 import { background, primary } from "../utils";
 import { ActivityIndicator } from "react-native";
-import { useRoute } from "@react-navigation/native";
+import { useIsFocused, useRoute } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 
 const Index = () => {
   const router = useRouter();
+  const isFocus = useIsFocused();
   useEffect(() => {
     setTimeout(() => {
       router.push("home");
     }, 0);
-  }, []);
+  }, [isFocus]);
   return (
     <BackgroundProvider>
       <View style={styles.container}>

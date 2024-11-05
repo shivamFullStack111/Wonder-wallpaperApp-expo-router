@@ -1,15 +1,40 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-import React, { useEffect, useState } from "react";
-import { Image } from "react-native";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  FlatList,
+  Touchable,
+  Pressable,
+} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import BackgroundProvider from "../components/BackgroundProvider";
 import BottomSheet from "react-native-simple-bottom-sheet";
 import { colors, primary } from "../utils";
-
-import { Drawer, Searchbar } from "react-native-paper";
-import { FlatList } from "react-native";
+import { Searchbar } from "react-native-paper";
 import axios from "axios";
-// https://pixabay.com/api/videos/?key=46894657-46b36a9228f3db8d2e204be40
+import Animated, {
+  FadeInDown,
+  FadeInRight,
+  FadeInUp,
+  FadeOutDown,
+  FadeOutLeft,
+  FadeOutRight,
+  FadeOutUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { TouchableOpacity } from "react-native";
+import ModalForShareAndDownload from "../components/ModalForShareAndDownload";
+import { TouchableHighlight } from "react-native";
+import { transform } from "typescript";
+import { BlurView } from "expo-blur";
+import { Entypo, Feather, MaterialIcons } from "@expo/vector-icons";
+
 export const categories = [
   "All",
   "backgrounds",
@@ -34,183 +59,227 @@ export const categories = [
   "music",
 ];
 
-const home = () => {
-  const [active, setActive] = React.useState("first");
-  const [category, setcategory] = useState(null);
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [images, setimages] = useState([]);
-  const [resfreshing, setresfreshing] = useState(false);
+const Home = () => {
+  const [category, setCategory] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [images, setImages] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [isMoreFetching, setIsMoreFetching] = useState(false);
+  const [isNotOnTop, setisNotOnTop] = useState(false);
+  const scrollRef = useRef();
+  const [showModal, setshowModal] = useState(false);
+  const [ActiveData, setActiveData] = useState(null);
 
-  const getImages = async (ispagenumber) => {
+  const getImages = async (page, addMore = false) => {
     let baseUrl =
       "https://pixabay.com/api/?key=46894657-46b36a9228f3db8d2e204be40&order=latest";
+    let url = `${baseUrl}&page=${page}`;
 
-    let url = baseUrl;
-
-    if (ispagenumber) {
-      url = url + "&page=" + Math.ceil(Math.random() * 20);
-    }
-    if (category) {
-      url = url + "&category=" + category;
+    if (category && category !== "All") {
+      url += `&category=${category}`;
     }
     if (searchQuery) {
-      url = url + "&q=" + searchQuery;
+      url += `&q=${searchQuery}`;
     }
     try {
       const res = await axios.get(url);
-      setimages(res?.data?.hits);
+      setImages((prevImages) =>
+        addMore ? [...prevImages, ...res.data.hits] : res.data.hits
+      );
     } catch (error) {
       console.log(error.message);
     }
   };
 
-  const search = () => {
-    try {
-      if (searchQuery.length < 3) return;
-      const time = setTimeout(() => {
-        getImages(false);
-      }, 500);
-
-      return () => clearTimeout(time);
-    } catch (error) {
-      console.log(error.message);
-    }
-  };
+  const search = useCallback(() => {
+    if (searchQuery.length < 3) return;
+    const time = setTimeout(() => {
+      getImages(1, false);
+    }, 500);
+    return () => clearTimeout(time);
+  }, [searchQuery]);
 
   useEffect(() => {
     if (searchQuery.length > 2) {
       search();
+    } else if (searchQuery.length === 0) {
+      getImages(1);
     }
-    if (searchQuery.length === 0) {
-      getImages();
-    }
-  }, [search]);
-  const handleRefresh = () => {
-    try {
-      setresfreshing(true);
+  }, [searchQuery, search]);
 
-      getImages(true);
-      setresfreshing(false);
-    } catch (error) {
-      console.log(error.message);
-      setresfreshing(false);
-    }
-  };
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await getImages(1);
+    setRefreshing(false);
+  }, [category]);
 
   useEffect(() => {
-    getImages(false);
+    getImages(pageNumber);
   }, [category]);
+
   return (
-    <BackgroundProvider>
-      <View style={{ flex: 1 }}>
-        {/* header  */}
-        <View style={styles.headerCon}>
-          <Image
-            resizeMode="cover" // ya 'contain'
-            style={styles.image}
-            source={require("../images/logo.png")}
-          ></Image>
-          <Ionicons
-            name="reorder-three-outline"
-            size={40}
-            style={{ marginRight: 5 }}
-            color={primary}
-          />
-        </View>
-        <Searchbar
-          placeholder="Search"
-          onChangeText={(t) => {
-            setSearchQuery(t);
-          }}
-          value={searchQuery}
-          style={styles.searchCon}
+    <>
+      {showModal && (
+        <ModalForShareAndDownload
+          ActiveData={ActiveData}
+          setshowModal={setshowModal}
         />
+      )}
+      <BackgroundProvider>
+        <View style={{ flex: 1 }}>
+          {/* Header */}
+          <View style={styles.headerCon}>
+            <Image
+              resizeMode="cover"
+              style={styles.image}
+              source={require("../images/logo.png")}
+            />
+            <Ionicons
+              name="reorder-three-outline"
+              size={40}
+              style={{ marginRight: 5 }}
+              color={primary}
+            />
+          </View>
 
-        {/* categories  */}
+          {/* Search Bar */}
+          <Searchbar
+            placeholder="Search"
+            onChangeText={setSearchQuery}
+            value={searchQuery}
+            style={styles.searchCon}
+          />
 
-        <View style={{ flexDirection: "row", width: "100%", marginTop: 5 }}>
-          <FlatList
-            data={categories}
-            // keyExtractor={(k) => k}
-            horizontal
-            style={{ padding: 10 }}
-            showsHorizontalScrollIndicator={false}
-            renderItem={(item) => {
-              return (
+          {/* Categories */}
+          <View style={styles.categoryContainer}>
+            <FlatList
+              data={categories}
+              horizontal
+              style={{ padding: 10 }}
+              showsHorizontalScrollIndicator={false}
+              renderItem={({ item }) => (
                 <Text
-                  onPress={() => {
-                    setcategory(item.item);
-                  }}
+                  onPress={() => setCategory(item)}
                   style={{
                     ...styles.catText,
-                    backgroundColor:
-                      item.item == category ? primary : "#fae6ed",
-                    color: item.item == category ? "white" : "black",
+                    backgroundColor: item === category ? primary : "#fae6ed",
+                    color: item === category ? "white" : "black",
                   }}
                 >
-                  {item.item}
+                  {item}
                 </Text>
-              );
-            }}
-          />
-        </View>
+              )}
+            />
+          </View>
 
-        {/* render images  */}
-        <FlatList
-          refreshing={resfreshing}
-          onRefresh={() => handleRefresh()}
-          data={images}
-          StickyHeaderComponent={() => <Text>hii</Text>}
-          numColumns={2}
-          keyExtractor={(i) => i.id + Date.now() * Math.random() * 2048488838}
-          renderItem={({ item, index }) => {
-            return <Card index item={item} />;
-          }}
-        />
-        <BottomSheet isOpen={false}>
-          {(onScrollEndDrag) => (
-            <ScrollView onScrollEndDrag={onScrollEndDrag}>
-              {[...Array(10)].map((_, index) => (
-                <View key={`${index}`} style={styles.listItem}>
-                  <Text>{`List Item ${index + 1}`}</Text>
-                </View>
-              ))}
-            </ScrollView>
+          {/* Render Images */}
+          <View style={styles.imageContainer}>
+            <FlatList
+              ref={scrollRef}
+              onScroll={(e) => {
+                if (e.nativeEvent.contentOffset.y > 0) {
+                  setisNotOnTop(true);
+                } else {
+                  setisNotOnTop(false);
+                }
+              }}
+              data={images}
+              onEndReached={async () => {
+                setIsMoreFetching(true);
+                await getImages(pageNumber + 1, true);
+                setPageNumber((prev) => prev + 1);
+                setIsMoreFetching(false);
+              }}
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              numColumns={2}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => (
+                <Card
+                  setActiveData={setActiveData}
+                  setshowModal={setshowModal}
+                  item={item}
+                />
+              )}
+            />
+            {isMoreFetching && (
+              <ActivityIndicator
+                style={{ alignSelf: "center" }}
+                color={primary}
+                size={35}
+              />
+            )}
+          </View>
+
+          {/* go to top button  */}
+
+          {isNotOnTop && (
+            <Animated.View
+              entering={FadeInRight.duration(500)}
+              exiting={FadeOutRight.duration(500)}
+            >
+              <TouchableOpacity
+                onPress={() =>
+                  scrollRef.current.scrollToOffset({
+                    offset: 0,
+                    animated: true,
+                  })
+                }
+                style={{
+                  position: "absolute",
+                  zIndex: 50,
+                  bottom: 60,
+                  right: 20,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  backgroundColor: primary,
+                  borderRadius: 100,
+                  width: 60,
+                  height: 60,
+                }}
+              >
+                <Ionicons name="chevron-up" size={30} color="white" />
+              </TouchableOpacity>
+            </Animated.View>
           )}
-        </BottomSheet>
-      </View>
 
-      {/* searchbar  */}
-      {/* <View style={styles.searchCon}></View> */}
-    </BackgroundProvider>
+          {/* Bottom Sheet */}
+          <BottomSheet isOpen={false}>
+            {(onScrollEndDrag) => (
+              <ScrollView onScrollEndDrag={onScrollEndDrag}>
+                {[...Array(10)].map((_, index) => (
+                  <View key={`${index}`} style={styles.listItem}>
+                    <Text>{`List Item ${index + 1}`}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+          </BottomSheet>
+        </View>
+      </BackgroundProvider>
+    </>
   );
 };
 
-export default home;
+export default Home;
 
-export const Card = ({ item, index }) => {
-  let height;
-
-  if (item.imageHeight > item.imageWidth) {
-    height = 250;
-  }
-  if (item.imageHeight < item.imageWidth) {
-    height = 150;
-  }
+const Card = ({ item, setshowModal, setActiveData }) => {
+  const height = item.imageHeight > item.imageWidth ? 250 : 150;
 
   return (
-    <View
-      style={{
-        width: "50%",
-        alignSelf: "center",
-        padding: 4,
+    <Pressable
+      onPress={() => {
+        setshowModal(true);
+        setActiveData(item);
       }}
+      style={styles.cardContainer}
     >
       <Image
-        style={{ width: "100%", height: height, borderRadius: 15 }}
+        style={{ width: "100%", height, borderRadius: 15 }}
         source={{ uri: item.previewURL }}
       />
-    </View>
+    </Pressable>
   );
 };
 
@@ -232,8 +301,10 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginTop: 10,
   },
-  scrollCon: {
+  categoryContainer: {
+    flexDirection: "row",
     width: "100%",
+    marginTop: 5,
   },
   catText: {
     fontSize: 17,
@@ -241,6 +312,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginRight: 10,
     borderRadius: 80,
-    color: "black",
+  },
+  imageContainer: {
+    paddingBottom: 50,
+    flex: 1,
+  },
+  cardContainer: {
+    width: "50%",
+    alignSelf: "center",
+    padding: 4,
   },
 });
