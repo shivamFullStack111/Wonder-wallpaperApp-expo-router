@@ -21,6 +21,7 @@ import { useState } from "react";
 
 const ModalForShareAndDownload = ({ setshowModal, ActiveData }) => {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isSharing, setisSharing] = useState(false);
 
   async function handleDownload() {
     setIsDownloading(true); // Set loading state
@@ -51,9 +52,9 @@ const ModalForShareAndDownload = ({ setshowModal, ActiveData }) => {
       setIsDownloading(false); // Reset loading state
     }
   }
-
   async function handleShare() {
     try {
+      setisSharing(true);
       // Request permission to access the media library
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== "granted") {
@@ -76,13 +77,11 @@ const ModalForShareAndDownload = ({ setshowModal, ActiveData }) => {
       // Share the saved image
       await Sharing.shareAsync(asset.uri);
     } catch (error) {
+      setisSharing(false);
       console.error(error);
       Alert.alert("Error", "Failed to share the image.");
     }
-  }
-
-  function handleAddToWallpaper() {
-    // Implement add to wallpaper functionality
+    setisSharing(false);
   }
 
   return (
@@ -149,7 +148,7 @@ const ModalForShareAndDownload = ({ setshowModal, ActiveData }) => {
                 paddingHorizontal: 10,
               }}
             >
-              <BlurView
+              {/* <BlurView
                 experimentalBlurMethod="dimezisBlurView"
                 intensity={100}
                 tint="dark"
@@ -164,7 +163,7 @@ const ModalForShareAndDownload = ({ setshowModal, ActiveData }) => {
                 <TouchableOpacity onPress={handleAddToWallpaper}>
                   <MaterialIcons name="now-wallpaper" size={22} color="white" />
                 </TouchableOpacity>
-              </BlurView>
+              </BlurView> */}
               <BlurView
                 experimentalBlurMethod="dimezisBlurView"
                 intensity={100}
@@ -199,8 +198,12 @@ const ModalForShareAndDownload = ({ setshowModal, ActiveData }) => {
                   alignItems: "center",
                 }}
               >
-                <TouchableOpacity onPress={handleShare}>
-                  <Entypo name="share" size={22} color="white" />
+                <TouchableOpacity onPress={isSharing ? null : handleShare}>
+                  {isSharing ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <Entypo name="share" size={22} color="white" />
+                  )}
                 </TouchableOpacity>
               </BlurView>
             </Animated.View>

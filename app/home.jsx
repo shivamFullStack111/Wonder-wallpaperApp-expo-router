@@ -73,7 +73,7 @@ const Home = () => {
 
   const getImages = async (page, addMore = false) => {
     let baseUrl =
-      "https://pixabay.com/api/?key=46894657-46b36a9228f3db8d2e204be40&order=latest";
+      "https://pixabay.com/api/?key=46894657-46b36a9228f3db8d2e204be40";
     let url = `${baseUrl}&page=${page}`;
 
     if (category && category !== "All") {
