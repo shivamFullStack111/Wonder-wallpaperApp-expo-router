@@ -11,9 +11,11 @@ const Index = () => {
   const router = useRouter();
   const isFocus = useIsFocused();
   useEffect(() => {
-    setTimeout(() => {
-      router.push("home");
-    }, 0);
+    if (isFocus) {
+      setTimeout(() => {
+        router.push("welcomeScreen");
+      }, 2000);
+    }
   }, [isFocus]);
   return (
     <BackgroundProvider>
