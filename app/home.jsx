@@ -245,7 +245,7 @@ const Home = () => {
           )}
 
           {/* Bottom Sheet */}
-          <BottomSheet isOpen={false}>
+          {/* <BottomSheet isOpen={false}>
             {(onScrollEndDrag) => (
               <ScrollView onScrollEndDrag={onScrollEndDrag}>
                 {[...Array(10)].map((_, index) => (
@@ -255,7 +255,7 @@ const Home = () => {
                 ))}
               </ScrollView>
             )}
-          </BottomSheet>
+          </BottomSheet> */}
         </View>
       </BackgroundProvider>
     </>
