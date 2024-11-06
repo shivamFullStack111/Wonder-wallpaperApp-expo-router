@@ -135,12 +135,12 @@ const Home = () => {
               style={styles.image}
               source={require("../images/logo.png")}
             />
-            <Ionicons
+            {/* <Ionicons
               name="reorder-three-outline"
               size={40}
               style={{ marginRight: 5 }}
               color={primary}
-            />
+            /> */}
           </View>
 
           {/* Search Bar */}
@@ -229,7 +229,7 @@ const Home = () => {
                 style={{
                   position: "absolute",
                   zIndex: 50,
-                  bottom: 60,
+                  bottom: 30,
                   right: 20,
                   justifyContent: "center",
                   alignItems: "center",
@@ -314,7 +314,6 @@ const styles = StyleSheet.create({
     borderRadius: 80,
   },
   imageContainer: {
-    paddingBottom: 50,
     flex: 1,
   },
   cardContainer: {
